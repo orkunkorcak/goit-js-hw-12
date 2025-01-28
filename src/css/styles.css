@@ -107,3 +107,6 @@ a {
     width: 100px;
     height: 40px;
 }
+.more-button:hover {
+  background-color: #6C8CFF;
+}
