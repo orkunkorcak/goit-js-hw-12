@@ -13,7 +13,9 @@ const lightbox = new SimpleLightbox(".gallery a", {
 const searchButton = document.querySelector(".search-button");
 const moreButton = document.querySelector(".more-button");
 const list = document.querySelector(".gallery");
+const loader = document.querySelector(".loader");
 let page = 1;
+let totalHits = 0;
 
 async function fetchData(page) {
   const apiKey = "48318006-868fd1918e5aa19d98c3706e2";
@@ -42,7 +44,7 @@ async function fetchData(page) {
     const response = await axios.get(searchUrlAdress);
     const data = response.data;
 
-    if (data.hits.length === 0) {
+    if (!data.hits || data.hits.length === 0) {
       iziToast.error({
         message:
           "Sorry, there are no images matching your search query. Please try again!",
@@ -50,7 +52,7 @@ async function fetchData(page) {
       });
       return null;
     }
-
+    totalHits = data.totalHits;
     return data;
   } catch (error) {
     iziToast.error({
@@ -89,22 +91,25 @@ function renderData(data) {
           `;
     })
     .join("");
-  list.innerHTML = markup;
+  list.insertAdjacentHTML("beforeend", markup);
   lightbox.refresh();
 }
 
 searchButton.addEventListener("click", async (event) => {
   event.preventDefault();
-  const loader = document.querySelector(".loader");
   page = 1;
   list.innerHTML = "";
   loader.style.display = "flex";
+  moreButton.style.display = "none";
 
   try {
     const data = await fetchData(page);
     if (data) {
       renderData(data);
       page += 1;
+      if (totalHits > 40) {
+        moreButton.style.display = "flex";
+      }
     }
   } catch (error) {
     iziToast.error({
@@ -113,5 +118,43 @@ searchButton.addEventListener("click", async (event) => {
     });
   } finally {
     loader.style.display = "none";
+  }
+});
+
+moreButton.addEventListener("click", async (event) => {
+  event.preventDefault();
+
+  if ((page - 1) * 40 >= totalHits) {
+    iziToast.info({
+      message: "We're sorry, but you've reached the end of search results.",
+      position: "topRight",
+    });
+    moreButton.style.display = "none";
+    return;
+  }
+
+  try {
+    const data = await fetchData(page);
+    if (data) {
+      const firstNewImage = list.lastElementChild; 
+      renderData(data);
+      page += 1;
+
+      
+      if (firstNewImage) {
+        const { height } = firstNewImage.getBoundingClientRect();
+        window.scrollBy({ top: height * 2, behavior: "smooth" });
+      }
+
+      
+      // if ((page - 1) * 40 >= totalHits) {
+      //   moreButton.style.display = "none";
+      // }
+    }
+  } catch (error) {
+    iziToast.error({
+      message: "Something went wrong! Please try again.",
+      position: "topRight",
+    });
   }
 });
