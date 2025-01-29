@@ -100,7 +100,7 @@ a {
       color: #ffffff;
     background-color: #4E75FF;
     border-radius: 8px;
-    display: flex;
+    display: none;
     margin: 10px auto;
     justify-content: center;
     align-items: center;
